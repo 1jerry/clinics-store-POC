@@ -5,20 +5,34 @@ function sleep(seconds) {
 }
 export function createClinic() {
   const store = makeAutoObservable({
-    state: -1,
+    state: "",
     topServices: ["1", "2"],
+    get getState() {
+      return this.state;
+    },
+    setLoading() {
+      this.state = "loading";
+    },
+    setError() {
+      this.state = "error";
+    },
+    setEmpty() {
+      this.state = "empty";
+    },
+    setGood() {
+      this.state = "good";
+    },
     get services() {
       return this.topServices;
     },
     setServices: flow(function* (store) {
       console.log(`setServices-1. store.state ${store.state}`);
-      this.state = 0;
-      yield when(() => store.state === 1);
+      this.setLoading();
+      yield when(() => store.getState === "good");
       console.log(`setServices-2. store.state ${store.state}`);
       this.topServices = store.clinicsOrdered.map((i) => i.name);
       yield sleep(1);
-      // setTimeout(() => this.state === 1, 2000);
-      this.state = 1;
+      this.setGood();
     }),
     get count() {
       return this.topServices.length;
@@ -30,9 +44,11 @@ export function createClinic() {
   return store;
 }
 export function createStore() {
+  const states = "loading, error, empty, good".split(", ");
   const store = makeAutoObservable({
     counter: 0,
-    state: 0,
+    state: "start",
+    stateNum: -1,
     clinics: new Set(),
     clinicsOrdered: [],
     clinicsAdded: false,
@@ -40,7 +56,27 @@ export function createStore() {
       this.counter += 1;
     },
     toggleState() {
-      this.state = 0 + !this.state;
+      // for interactive testing
+      this.state = states[++this.stateNum];
+    },
+    get getState() {
+      return this.state;
+    },
+    setLoading() {
+      this.state = "loading";
+      this.stateNum = 0;
+    },
+    setError() {
+      this.state = "error";
+      this.stateNum = 1;
+    },
+    setEmpty() {
+      this.state = "empty";
+      this.stateNum = 2;
+    },
+    setGood() {
+      this.state = "good";
+      this.stateNum = 3;
     },
     setClinics(clinics) {
       this.clinics.clear();
@@ -63,9 +99,6 @@ export function createStore() {
     get count() {
       return this.clinicsOrdered.length;
     }
-  });
-  autorun(() => {
-    console.log("autorun---clinics is empty?", store.clinics.length !== 0);
   });
   autorun(() => {
     console.log("autorun--- clinics state", store.state);
