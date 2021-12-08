@@ -3,6 +3,14 @@ import { makeAutoObservable, autorun, flow, when, toJS } from "mobx";
 function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
+const removeWordsFunction = (words) => (text) =>
+  text
+    .replace(new RegExp("\\b(" + words + ")\\b", "gi"), " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+const clinicAlias = {
+  "clinic 1": "clinic 1a"
+};
 export function createClinic() {
   const store = makeAutoObservable({
     state: "",
@@ -89,16 +97,20 @@ export function createStore() {
 
       clinics.forEach((item) => {
         console.log("process item ", item);
-
-        item.servicesOverride = item["service-list-order"] || [];
-        this.clinics.add(item.name, {
+        const clinicItem = {
           name: item.name,
           services: item.services,
-          servicesOverride: item.servicesOverride
-        });
+          servicesOverride: item["service-list-order"] || []
+        };
+        this.clinics.add(item.name, clinicItem);
+        if (item.name in clinicAlias)
+          this.clinics.add(clinicAlias[item.name], clinicItem);
         if (item.name === defaultClinic) {
-          this.clinicsOrder.replace(item.servicesOverride);
-          console.log("set default order to ", toJS(item.servicesOverride));
+          this.clinicsOrder.replace(clinicItem.servicesOverride);
+          console.log(
+            "set default order to ",
+            toJS(clinicItem.servicesOverride)
+          );
         }
       });
       console.log("clinicsOrder =", toJS(this.clinicsOrder));

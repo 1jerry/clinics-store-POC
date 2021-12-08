@@ -20,13 +20,13 @@ it("has working methods", () => {
 it("can load clinics", () => {
   const store = createStore();
   store.loadClinics(testClinics);
-  expect(store.count).toEqual(3);
+  expect(store.count).toEqual(4); // clinic 1 has an alias, which adds another item
   expect(store.clinicsOrder).toEqual([]);
   testClinics.push({
     name: store.defaultClinic,
     "service-list-order": ["3", "4", "1"]
   });
   store.loadClinics(testClinics); // default will now be set
-  expect(store.count).toEqual(4);
+  expect(store.count).toEqual(5);
   expect(store.clinicsOrder).toEqual(["3", "4", "1"]);
 });
