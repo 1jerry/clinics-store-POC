@@ -1,4 +1,4 @@
-import { makeAutoObservable, autorun, flow, when } from "mobx";
+import { makeAutoObservable, autorun, flow, when, toJS } from "mobx";
 
 function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
@@ -30,7 +30,7 @@ export function createClinic() {
       this.setLoading();
       yield when(() => store.getState === "good");
       console.log(`setServices-2. store.state ${store.state}`);
-      this.topServices = store.clinicsOrdered.map((i) => i.name);
+      this.topServices = store.clinicsOrder.map((i) => i.name);
       yield sleep(1);
       this.setGood();
     }),
@@ -39,24 +39,28 @@ export function createClinic() {
     }
   });
   autorun(() => {
-    console.log("autorun---services is empty?", store.services.length !== 0);
+    console.log("autorun---services is empty?", store.services.length === 0);
   });
   return store;
 }
 export function createStore() {
   const states = "loading, error, empty, good".split(", ");
+  const defaultClinic = "default";
   const store = makeAutoObservable({
     counter: 0,
-    state: "start",
+    state: "good",
     stateNum: -1,
     clinics: new Set(),
-    clinicsOrdered: [],
+    clinicsOrder: [],
     clinicsAdded: false,
     increment() {
       this.counter += 1;
     },
+    get defaultClinic() {
+      return defaultClinic;
+    },
     toggleState() {
-      // for interactive testing
+      // for interactive testing. TMP
       this.state = states[++this.stateNum];
     },
     get getState() {
@@ -78,26 +82,31 @@ export function createStore() {
       this.state = "good";
       this.stateNum = 3;
     },
-    setClinics(clinics) {
+    loadClinics(clinics) {
       this.clinics.clear();
-      this.clinicsOrdered.clear();
-      console.log("setClinics run with ", clinics);
+      this.clinicsOrder.clear();
+      console.log("loadClinics run with ", clinics);
 
       clinics.forEach((item) => {
         console.log("process item ", item);
 
+        item.servicesOverride = item["service-list-order"] || [];
         this.clinics.add(item.name, {
           name: item.name,
-          services: item.services
+          services: item.services,
+          servicesOverride: item.servicesOverride
         });
-        this.clinicsOrdered.push(item);
+        if (item.name === defaultClinic) {
+          this.clinicsOrder.replace(item.servicesOverride);
+          console.log("set default order to ", toJS(item.servicesOverride));
+        }
       });
-      console.log("clinics =", this.clinics["clinic 1"], this.clinics);
-      console.log("clinicsOrdered =", this.clinicsOrdered);
+      console.log("clinicsOrder =", toJS(this.clinicsOrder));
+      console.log("clinics =", toJS(this.clinics));
       this.clinicsAdded = true;
     },
     get count() {
-      return this.clinicsOrdered.length;
+      return this.clinics.size;
     }
   });
   autorun(() => {

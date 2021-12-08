@@ -3,27 +3,32 @@ import { render } from "react-dom";
 import { observer } from "mobx-react-lite";
 import { createClinic, createStore } from "./stores";
 import data from "./testdata";
-const testClinic = data.test3Clinics;
+const testClinics = data.test3Clinics;
 
-const App = observer(({ store, store2 }) => {
-  const onSetClinic = (clinic) => {
-    store.setClinics(clinic);
-    store2.setServices(store);
+const App = observer(({ store, clinicStore }) => {
+  testClinics.push({
+    name: store.defaultClinic,
+    "service-list-order": ["3", "4", "1"]
+  });
+  const onSetClinic = (clinics) => {
+    store.loadClinics(clinics);
+    clinicStore.setServices(store);
   };
   let key = 0;
-  const ClinicsFetching2 = observer(() => {
-    return store2.state === "loading" && <div>fetching...</div>;
+  const ClinicsLoading = observer(() => {
+    return clinicStore.state === "loading" && <div>fetching...</div>;
   });
-  const ClinicsFetched2 = observer(() => {
+  const ClinicsLoaded = observer(() => {
     return (
-      store2.state === "good" && (
+      clinicStore.state === "good" && (
         <div>
-          <div>{store.count} clinics</div>
-          {store.clinicsOrdered.map((clinic) => (
-            <div key={key++}>{clinic.name}</div>
+          <div>{store.count} clinics.</div>
+          {[...store.clinics].map((clinic) => (
+            <div key={key++}>{clinic}</div>
           ))}
-          <div>{store2.count} services</div>
-          {store2.services.map((name) => (
+          <hr />
+          <div>{clinicStore.count} default services</div>
+          {store.clinicsOrder.map((name) => (
             <div key={key++}>{name}</div>
           ))}
         </div>
@@ -35,23 +40,23 @@ const App = observer(({ store, store2 }) => {
     <div>
       <div>count: {store.counter}</div>
       <button onClick={() => store.increment()}>+1</button>
-      <button onClick={() => onSetClinic(testClinic)}>
+      <button onClick={() => onSetClinic(testClinics)}>
         {store.clinicsAdded ? "reset" : "add"} Clinics
       </button>
       <button onClick={() => store.toggleState()}>
         Stores toggle {store.getState}
       </button>
       <hr />
-      <ClinicsFetching2 />
+      <ClinicsLoading />
+      <ClinicsLoaded />
       <hr />
-      <ClinicsFetched2 />
     </div>
   );
 });
 
 render(
   <div>
-    <App store={createStore()} store2={createClinic()} />
+    <App store={createStore()} clinicStore={createClinic()} />
   </div>,
   document.getElementById("root")
 );
