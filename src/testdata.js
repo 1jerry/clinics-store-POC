@@ -1,7 +1,11 @@
 export default {
   test3Clinics: [
     { name: "clinic 1", services: ["1", "2"], garbage: "this will be ignored" },
-    { name: "clinic 2", services: ["1", "2"] },
+    {
+      name: "clinic 2",
+      services: ["1", "2"],
+      "service-list-order": ["9", "1"]
+    },
     { name: "clinic 3", services: ["1", "2", "3", "4"] },
     {
       name: "default",

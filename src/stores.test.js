@@ -5,7 +5,7 @@ const testServices = data.test4Services;
 const sleep = (seconds) =>
   new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
-it("has working functions", () => {
+it.only("has working functions", () => {
   const rwfn = testonly.removeWordsFunction("a|the|is|test");
   expect(rwfn("this is a test of the american ")).toBe("this of american");
   const kvs = {
@@ -88,4 +88,25 @@ it("can load services BEFORE clinics too", async () => {
   expect(store.servicesDefaultNames.length).toBe(2);
   expect(store.servicesDefaultNames[0]).toBe("Flu shot");
   expect(store.serviceNames["4"]).toBe("Flu shot");
+});
+/*
+get specific clinic services in order
+ */
+describe.only("retrieving services list", () => {
+  const store = createStore();
+  it("cannot find a service before loaded", () => {
+    expect(store.getTopServices("clinic 1")).toEqual("missing");
+  });
+  it("can find a service after loaded", () => {
+    store.loadServices(testServices);
+    store.loadClinics(testClinics); // default will now be set
+    const sdn = store.servicesDefaultNames;
+    expect(store.getTopServices("clinic 1")).toEqual([sdn[1]]);
+    expect(store.getTopServices("clinic 3")).toEqual(sdn.slice(0, 2));
+    expect(store.getTopServices("clinic 3")).toEqual(sdn.slice(0, 2)); // 2nd time still works
+    expect(store.getTopServices("clinic 2")).toEqual([
+      store.serviceNames["9"],
+      sdn[1]
+    ]);
+  });
 });

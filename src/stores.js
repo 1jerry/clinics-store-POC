@@ -81,7 +81,7 @@ export function createStore() {
     counter: 0,
     state: "good",
     stateNum: -1,
-    clinics: new Set(),
+    clinics: new Map(),
     servicesDefaultOrder: [], // default service IDs in order
     servicesDefaultNames: [], // normalized service names in order
     clinicsAdded: false,
@@ -116,6 +116,29 @@ export function createStore() {
       this.state = "good";
       this.stateNum = 3;
     },
+    getTopServices(name) {
+      const clinic = this.clinics.get(name);
+      console.log("getTopServices, clinic = ", name, clinic);
+      console.log("ordered list = ", this.servicesDefaultNames.join(", "));
+
+      if (!clinic) return "missing";
+      if (clinic.topNames) return clinic.topNames;
+      let topNames = [];
+      if (clinic.servicesOverride.length === 0) {
+        topNames = createOrderedList(
+          this.serviceNames,
+          clinic.services,
+          this.servicesDefaultNames
+        );
+      } else {
+        topNames = createOrderedList(
+          this.serviceNames,
+          clinic.servicesOverride
+        );
+      }
+      clinic.topNames = topNames;
+      return topNames;
+    },
     loadServices(serviceLines) {
       this.serviceNames = {};
       if (serviceLines.length) {
@@ -141,9 +164,9 @@ export function createStore() {
             services: item.services,
             servicesOverride: item["service-list-order"] || []
           };
-          this.clinics.add(item.name, clinicItem);
+          this.clinics.set(item.name, clinicItem);
           if (item.name in clinicAlias)
-            this.clinics.add(clinicAlias[item.name], clinicItem);
+            this.clinics.set(clinicAlias[item.name], clinicItem);
           if (item.name === defaultClinic) {
             this.servicesDefaultOrder.replace(clinicItem.servicesOverride);
             console.log(
