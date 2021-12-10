@@ -4,15 +4,16 @@ import { observer } from "mobx-react-lite";
 import { createClinic, createStore } from "./stores";
 import data from "./testdata";
 const testClinics = data.test3Clinics;
+const testServices = data.test4Services;
 
 const App = observer(({ store, clinicStore }) => {
-  testClinics.push({
-    name: store.defaultClinic,
-    "service-list-order": ["3", "4", "1"]
-  });
   const onSetClinic = (clinics) => {
     store.loadClinics(clinics);
     clinicStore.setServices(store);
+  };
+  const onSetServices = (list) => {
+    store.loadServices(list);
+    // clinicStore.setServices(store);
   };
   let key = 0;
   const ClinicsLoading = observer(() => {
@@ -27,10 +28,10 @@ const App = observer(({ store, clinicStore }) => {
             <div key={key++}>{clinic}</div>
           ))}
           <hr />
-          <div>{clinicStore.count} default services</div>
+          {/* <div>{clinicStore.count} default services</div>
           {store.clinicsOrder.map((name) => (
             <div key={key++}>{name}</div>
-          ))}
+          ))} */}
         </div>
       )
     );
@@ -42,6 +43,9 @@ const App = observer(({ store, clinicStore }) => {
       <button onClick={() => store.increment()}>+1</button>
       <button onClick={() => onSetClinic(testClinics)}>
         {store.clinicsAdded ? "reset" : "add"} Clinics
+      </button>
+      <button onClick={() => onSetServices(testServices)}>
+        {store.servicesAdded ? "reset" : "add"} Services
       </button>
       <button onClick={() => store.toggleState()}>
         Stores toggle {store.getState}

@@ -1,16 +1,39 @@
 import { makeAutoObservable, autorun, flow, when, toJS } from "mobx";
 
-function sleep(seconds) {
-  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-}
+const sleep = (seconds) =>
+  new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+
 const removeWordsFunction = (words) => (text) =>
   text
     .replace(new RegExp("\\b(" + words + ")\\b", "gi"), " ")
     .replace(/\s{2,}/g, " ")
     .trim();
+
+// returns list of normalized service names in the proper order
+const createOrderedList = (services, ids, filters) => {
+  let ret = [...new Set(ids.map((id) => services[id]).filter((a) => a))];
+  if (filters) {
+    console.log("filters ", filters);
+    ret = filters.filter((a) => ret.includes(a));
+  }
+  console.log("creatOrderedList returned ", ret);
+  return ret;
+};
+export const testonly = {
+  removeWordsFunction,
+  createOrderedList
+};
+/*
+Set manually.  Add a line for each clinic name from Webflow that doesn't match our db
+Webflow-clinic-name: ZoomAPI-clinic-name
+Also, set the words to remove from service names
+*/
 const clinicAlias = {
   "clinic 1": "clinic 1a"
 };
+const normalize = removeWordsFunction("clinic|video|visit");
+// done with settings
+
 export function createClinic() {
   const store = makeAutoObservable({
     state: "",
@@ -38,7 +61,7 @@ export function createClinic() {
       this.setLoading();
       yield when(() => store.getState === "good");
       console.log(`setServices-2. store.state ${store.state}`);
-      this.topServices = store.clinicsOrder.map((i) => i.name);
+      this.topServices = store.servicesDefaultOrder.map((i) => i.name);
       yield sleep(1);
       this.setGood();
     }),
@@ -59,8 +82,11 @@ export function createStore() {
     state: "good",
     stateNum: -1,
     clinics: new Set(),
-    clinicsOrder: [],
+    servicesDefaultOrder: [], // default service IDs in order
+    servicesDefaultNames: [], // normalized service names in order
     clinicsAdded: false,
+    servicesAdded: false,
+    serviceNames: {}, // map service ids to normalized names
     increment() {
       this.counter += 1;
     },
@@ -90,32 +116,46 @@ export function createStore() {
       this.state = "good";
       this.stateNum = 3;
     },
+    loadServices(serviceLines) {
+      this.serviceNames = {};
+      if (serviceLines.length) {
+        this.setLoading();
+        serviceLines.forEach((item) => {
+          this.serviceNames[item.value] = normalize(item.caption);
+        });
+        this.servicesAdded = true;
+      } else {
+        this.setEmpty();
+      }
+    },
     loadClinics(clinics) {
       this.clinics.clear();
-      this.clinicsOrder.clear();
+      this.servicesDefaultOrder.clear();
       console.log("loadClinics run with ", clinics);
-
-      clinics.forEach((item) => {
-        console.log("process item ", item);
-        const clinicItem = {
-          name: item.name,
-          services: item.services,
-          servicesOverride: item["service-list-order"] || []
-        };
-        this.clinics.add(item.name, clinicItem);
-        if (item.name in clinicAlias)
-          this.clinics.add(clinicAlias[item.name], clinicItem);
-        if (item.name === defaultClinic) {
-          this.clinicsOrder.replace(clinicItem.servicesOverride);
-          console.log(
-            "set default order to ",
-            toJS(clinicItem.servicesOverride)
-          );
-        }
-      });
-      console.log("clinicsOrder =", toJS(this.clinicsOrder));
-      console.log("clinics =", toJS(this.clinics));
-      this.clinicsAdded = true;
+      if (clinics.length) {
+        this.setLoading();
+        clinics.forEach((item) => {
+          console.log("process item ", item);
+          const clinicItem = {
+            name: item.name,
+            services: item.services,
+            servicesOverride: item["service-list-order"] || []
+          };
+          this.clinics.add(item.name, clinicItem);
+          if (item.name in clinicAlias)
+            this.clinics.add(clinicAlias[item.name], clinicItem);
+          if (item.name === defaultClinic) {
+            this.servicesDefaultOrder.replace(clinicItem.servicesOverride);
+            console.log(
+              "set default order to ",
+              toJS(clinicItem.servicesOverride)
+            );
+          }
+        });
+        console.log("servicesDefaultOrder =", toJS(this.servicesDefaultOrder));
+        console.log("clinics =", toJS(this.clinics));
+        this.clinicsAdded = true;
+      } else this.setEmpty();
     },
     get count() {
       return this.clinics.size;
@@ -123,6 +163,19 @@ export function createStore() {
   });
   autorun(() => {
     console.log("autorun--- clinics state", store.state);
+    // console.log(store.clinicsAdded, store.servicesAdded);
   });
+  when(
+    () => store.clinicsAdded && store.servicesAdded,
+    () => {
+      console.log("'when' reaction run");
+
+      store.servicesDefaultNames = createOrderedList(
+        store.serviceNames,
+        store.servicesDefaultOrder
+      );
+      store.setGood();
+    }
+  );
   return store;
 }
