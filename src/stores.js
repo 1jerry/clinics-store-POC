@@ -34,52 +34,12 @@ const clinicAlias = {
 const normalize = removeWordsFunction("clinic|video|visit");
 // done with settings
 
-export function createClinic() {
-  const store = makeAutoObservable({
-    state: "",
-    topServices: ["1", "2"],
-    get getState() {
-      return this.state;
-    },
-    setLoading() {
-      this.state = "loading";
-    },
-    setError() {
-      this.state = "error";
-    },
-    setEmpty() {
-      this.state = "empty";
-    },
-    setGood() {
-      this.state = "good";
-    },
-    get services() {
-      return this.topServices;
-    },
-    setServices: flow(function* (store) {
-      console.log(`setServices-1. store.state ${store.state}`);
-      this.setLoading();
-      yield when(() => store.getState === "good");
-      console.log(`setServices-2. store.state ${store.state}`);
-      this.topServices = store.servicesDefaultOrder.map((i) => i.name);
-      yield sleep(1);
-      this.setGood();
-    }),
-    get count() {
-      return this.topServices.length;
-    }
-  });
-  autorun(() => {
-    console.log("autorun---services is empty?", store.services.length === 0);
-  });
-  return store;
-}
 export function createStore() {
   const states = "loading, error, empty, good".split(", ");
   const defaultClinic = "default";
   const store = makeAutoObservable({
     counter: 0,
-    state: "good",
+    state: "empty",
     stateNum: -1,
     clinics: new Map(),
     servicesDefaultOrder: [], // default service IDs in order

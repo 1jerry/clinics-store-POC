@@ -1,33 +1,61 @@
-import React from "react";
+import React, { useState } from "react";
 import { render } from "react-dom";
 import { observer } from "mobx-react-lite";
-import { createClinic, createStore } from "./stores";
+import { createStore } from "./stores";
 import data from "./testdata";
+import { observable, toJS, configure } from "mobx";
 const testClinics = data.test3Clinics;
 const testServices = data.test4Services;
+configure({ enforceActions: "never" });
 
-const App = observer(({ store, clinicStore }) => {
-  const onSetClinic = (clinics) => {
+const App = observer(({ store }) => {
+  const onSetClinic = (clinics, list) => {
     store.loadClinics(clinics);
-    clinicStore.setServices(store);
-  };
-  const onSetServices = (list) => {
     store.loadServices(list);
-    // clinicStore.setServices(store);
+  };
+  // const [clinicName, selectClinic] = useState("<unknown>");
+  const clinics = observable({
+    name: "",
+    status: "",
+    list: []
+  });
+  const selectClinic = (name) => {
+    clinics.name = name;
+    clinics.status = "";
+    clinics.list = store.getTopServices(name);
+    if (typeof clinics.list === "string") {
+      clinics.status = clinics.list;
+      clinics.list = [];
+    }
+    console.log("selected clinics object: ", toJS(clinics));
   };
   let key = 0;
   const ClinicsLoading = observer(() => {
-    return clinicStore.state === "loading" && <div>fetching...</div>;
+    return store.state === "loading" && <div>fetching...</div>;
+  });
+  const ClinicsEmpty = observer(() => {
+    return store.state === "empty" && <div>no clinics yet</div>;
   });
   const ClinicsLoaded = observer(() => {
     return (
-      clinicStore.state === "good" && (
+      store.state === "good" && (
         <div>
           <div>{store.count} clinics.</div>
-          {[...store.clinics].map((clinic) => (
-            <div key={key++}>{clinic}</div>
+          {[...store.clinics.keys()].map((clinic) => (
+            <div key={key++}>
+              <button onClick={() => selectClinic(clinic)}>{clinic}</button>
+            </div>
           ))}
+          <div key={key++}>
+            <button onClick={() => selectClinic("bad")}>bad clinic</button>
+          </div>
           <hr />
+          {/* {!!clinicName &&  */}
+          <div>Clinic selected: {clinics.name}</div>
+          {clinics.status && <div>{clinics.status}</div>}
+          {clinics.list.map((name) => (
+            <div key={key++}>{name}</div>
+          ))}
           {/* <div>{clinicStore.count} default services</div>
           {store.clinicsOrder.map((name) => (
             <div key={key++}>{name}</div>
@@ -41,17 +69,13 @@ const App = observer(({ store, clinicStore }) => {
     <div>
       <div>count: {store.counter}</div>
       <button onClick={() => store.increment()}>+1</button>
-      <button onClick={() => onSetClinic(testClinics)}>
-        {store.clinicsAdded ? "reset" : "add"} Clinics
+      <button onClick={() => onSetClinic(testClinics, testServices)}>
+        {store.clinicsAdded ? "reset" : "add"} Clinics & Services
       </button>
-      <button onClick={() => onSetServices(testServices)}>
-        {store.servicesAdded ? "reset" : "add"} Services
-      </button>
-      <button onClick={() => store.toggleState()}>
-        Stores toggle {store.getState}
-      </button>
+      <span>Status: {store.getState}</span>
       <hr />
       <ClinicsLoading />
+      <ClinicsEmpty />
       <ClinicsLoaded />
       <hr />
     </div>
@@ -60,7 +84,7 @@ const App = observer(({ store, clinicStore }) => {
 
 render(
   <div>
-    <App store={createStore()} clinicStore={createClinic()} />
+    <App store={createStore()} />
   </div>,
   document.getElementById("root")
 );
