@@ -5,7 +5,7 @@ const testServices = data.test4Services;
 const sleep = (seconds) =>
   new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
-it.only("has working functions", () => {
+it("has working functions", () => {
   const rwfn = testonly.removeWordsFunction("a|the|is|test");
   expect(rwfn("this is a test of the american ")).toBe("this of american");
   const kvs = {
@@ -34,7 +34,7 @@ it("has working methods", () => {
   const store = createStore();
   console.log("test running.........");
   expect(store.counter).toEqual(0);
-  expect(store.state).toEqual("good");
+  expect(store.state).toEqual("empty");
   store.setLoading();
   expect(store.state).toEqual("loading");
   expect(store.getState).toEqual("loading");
@@ -92,7 +92,7 @@ it("can load services BEFORE clinics too", async () => {
 /*
 get specific clinic services in order
  */
-describe.only("retrieving services list", () => {
+describe("retrieving services list", () => {
   const store = createStore();
   it("cannot find a service before loaded", () => {
     expect(store.getTopServices("clinic 1")).toEqual("missing");
