@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { render } from "react-dom";
 import { observer } from "mobx-react-lite";
 import { createStore } from "./stores";
-import data from "./testdata";
 import { observable, toJS, configure } from "mobx";
+import data from "./testdata";
 const testClinics = data.test3Clinics;
 const testServices = data.test4Services;
 configure({ enforceActions: "never" });
@@ -20,6 +20,7 @@ const App = observer(({ store }) => {
     list: []
   });
   const selectClinic = (name) => {
+    store.initialize();
     clinics.name = name;
     clinics.status = "";
     clinics.list = store.getTopServices(name);
@@ -38,7 +39,7 @@ const App = observer(({ store }) => {
   });
   const ClinicsLoaded = observer(() => {
     return (
-      store.state === "good" && (
+      store.clinicsAdded && (
         <div>
           <div>{store.count} clinics.</div>
           {[...store.clinics.keys()].map((clinic) => (
@@ -70,9 +71,9 @@ const App = observer(({ store }) => {
       <div>count: {store.counter}</div>
       <button onClick={() => store.increment()}>+1</button>
       <button onClick={() => onSetClinic(testClinics, testServices)}>
-        {store.clinicsAdded ? "reset" : "add"} Clinics & Services
+        {store.clinicsAdded ? "reset" : "add"} Clinics
       </button>
-      <span>Status: {store.getState}</span>
+      <span> Status: {store.getState}</span>
       <hr />
       <ClinicsLoading />
       <ClinicsEmpty />

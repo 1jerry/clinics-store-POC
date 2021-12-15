@@ -1,4 +1,7 @@
 import { makeAutoObservable, autorun, flow, when, toJS } from "mobx";
+import data from "./testdata";
+const testClinics = data.test3Clinics;
+const testServices = data.test4Services;
 
 const sleep = (seconds) =>
   new Promise((resolve) => setTimeout(resolve, seconds * 1000));
@@ -46,6 +49,7 @@ export function createStore() {
     servicesDefaultNames: [], // normalized service names in order
     clinicsAdded: false,
     servicesAdded: false,
+    loadServicesNow: false,
     serviceNames: {}, // map service ids to normalized names
     increment() {
       this.counter += 1;
@@ -99,6 +103,13 @@ export function createStore() {
       clinic.topNames = topNames;
       return topNames;
     },
+    initialize1() {
+      this.loadClinics(testClinics);
+    },
+    initialize() {
+      this.loadServices(testServices);
+      console.log("store.initialize run");
+    },
     loadServices(serviceLines) {
       this.serviceNames = {};
       if (serviceLines.length) {
@@ -112,6 +123,7 @@ export function createStore() {
       }
     },
     loadClinics(clinics) {
+      this.loadServicesNow = true;
       this.clinics.clear();
       this.servicesDefaultOrder.clear();
       console.log("loadClinics run with ", clinics);
@@ -159,6 +171,10 @@ export function createStore() {
       );
       store.setGood();
     }
+  );
+  when(
+    () => store.loadServicesNow,
+    () => store.initialize()
   );
   return store;
 }
